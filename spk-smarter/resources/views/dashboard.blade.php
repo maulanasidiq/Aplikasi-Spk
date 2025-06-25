@@ -11,7 +11,7 @@
         <div class="card text-white bg-primary mb-3">
             <div class="card-body">
                 <h5 class="card-title">Jumlah Siswa</h5>
-                <p class="card-text">35 Siswa</p>
+                <p class="card-text">10 Siswa</p>
             </div>
         </div>
     </div>

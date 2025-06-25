@@ -6,6 +6,7 @@ use App\Http\Controllers\KriteriaController;
 use App\Http\Controllers\PenilaianController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\PerhitunganController;
 
 /*
 |--------------------------------------------------------------------------
@@ -81,5 +82,5 @@ Route::middleware(['auth'])->group(function () {
     | (Opsional) Halaman Perhitungan / Pemberian Sanksi
     |--------------------------------------------------------------------------
     */
-    Route::get('/perhitungan', [PenilaianController::class, 'hitung'])->name('perhitungan');
+    Route::get('/perhitungan', [PerhitunganController::class, 'index'])->name('perhitungan');
 });

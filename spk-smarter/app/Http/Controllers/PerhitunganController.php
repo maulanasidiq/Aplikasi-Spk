@@ -2,51 +2,54 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Models\Alternatif;
+use App\Models\Kriteria;
+use App\Models\Penilaian;
 
 class PerhitunganController extends Controller
 {
     public function index()
     {
-        return view('perhitungan');
-    }
+        $kriterias = Kriteria::all();
+        $alternatifs = Alternatif::all();
 
-    public function proses(Request $request)
-    {
-        // Validasi input
-        $request->validate([
-            'alternatif' => 'required|string',
-            'nilai_akademik' => 'required|numeric|min:0|max:100',
-            'disiplin' => 'required|numeric|min:0|max:100',
-            'kehadiran' => 'required|numeric|min:0|max:100',
-        ]);
+        $normalisasi = [];
+        foreach ($kriterias as $kriteria) {
+            $nilai_kriteria = Penilaian::where('kriteria_id', $kriteria->id)->pluck('nilai');
+            $max = $nilai_kriteria->max();
+            $min = $nilai_kriteria->min();
 
-        // Ambil nilai
-        $data = [
-            'alternatif' => $request->alternatif,
-            'nilai_akademik' => $request->nilai_akademik,
-            'disiplin' => $request->disiplin,
-            'kehadiran' => $request->kehadiran,
-        ];
+            foreach ($alternatifs as $alt) {
+                $nilai = Penilaian::where('alternatif_id', $alt->id)
+                    ->where('kriteria_id', $kriteria->id)
+                    ->value('nilai') ?? 0;
 
-        // Bobot preferensi (bisa dari database juga)
-        $bobot = [
-            'nilai_akademik' => 0.5,
-            'disiplin' => 0.3,
-            'kehadiran' => 0.2,
-        ];
-
-        // Normalisasi dan pembobotan (SMARTER)
-        $total = 0;
-        foreach ($bobot as $kriteria => $bobot_kriteria) {
-            $total += $data[$kriteria] * $bobot_kriteria;
+                if ($kriteria->jenis === 'benefit') {
+                    $normalisasi[$alt->id][$kriteria->id] = $max > 0 ? $nilai / $max : 0;
+                } else {
+                    $normalisasi[$alt->id][$kriteria->id] = $nilai > 0 ? $min / $nilai : 0;
+                }
+            }
         }
 
-        // Kirim ke view
-        return view('perhitungan-hasil', [
-            'data' => $data,
-            'bobot' => $bobot,
-            'hasil' => $total,
-        ]);
+        $hasil = [];
+        foreach ($alternatifs as $alt) {
+            $total = 0;
+            foreach ($kriterias as $kriteria) {
+                $bobot = $kriteria->bobot;
+                $nilai_norm = $normalisasi[$alt->id][$kriteria->id] ?? 0;
+                $total += $bobot * $nilai_norm;
+            }
+
+            $hasil[] = [
+                'alternatif' => $alt,
+                'nilai_akhir' => round($total, 4),
+            ];
+        }
+
+        // Urutkan berdasarkan nilai akhir tertinggi
+        usort($hasil, fn($a, $b) => $b['nilai_akhir'] <=> $a['nilai_akhir']);
+
+        return view('perhitungan.index', compact('hasil'));
     }
 }

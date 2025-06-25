@@ -7,10 +7,15 @@
 
 <a href="{{ route('kriteria.create') }}" class="btn btn-primary mb-3">+ Tambah Kriteria</a>
 
+@if(session('success'))
+<div class="alert alert-success">{{ session('success') }}</div>
+@endif
+
 <table class="table table-bordered">
-    <thead>
+    <thead class="table-dark">
         <tr>
             <th>No</th>
+            <th>Kode</th>
             <th>Nama Kriteria</th>
             <th>Bobot</th>
             <th>Jenis</th>
@@ -18,21 +23,26 @@
         </tr>
     </thead>
     <tbody>
-        @foreach ($kriterias as $index => $kriteria)
+        @forelse ($kriterias as $index => $k)
         <tr>
             <td>{{ $index + 1 }}</td>
-            <td>{{ $kriteria->nama }}</td>
-            <td>{{ $kriteria->bobot }}</td>
-            <td>{{ ucfirst($kriteria->jenis) }}</td>
+            <td>{{ $k->kode }}</td>
+            <td>{{ $k->nama }}</td>
+            <td>{{ $k->bobot }}</td>
+            <td>{{ ucfirst($k->jenis) }}</td>
             <td>
-                <a href="{{ route('kriteria.edit', $kriteria->id) }}" class="btn btn-warning btn-sm">Edit</a>
-                <form action="{{ route('kriteria.destroy', $kriteria->id) }}" method="POST" class="d-inline">
+                <a href="{{ route('kriteria.edit', $k->id) }}" class="btn btn-warning btn-sm">Edit</a>
+                <form action="{{ route('kriteria.destroy', $k->id) }}" method="POST" class="d-inline">
                     @csrf @method('DELETE')
                     <button onclick="return confirm('Hapus kriteria ini?')" class="btn btn-danger btn-sm">Hapus</button>
                 </form>
             </td>
         </tr>
-        @endforeach
+        @empty
+        <tr>
+            <td colspan="6" class="text-center">Belum ada data kriteria.</td>
+        </tr>
+        @endforelse
     </tbody>
 </table>
 @endsection

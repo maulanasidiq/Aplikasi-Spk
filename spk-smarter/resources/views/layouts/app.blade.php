@@ -41,6 +41,8 @@
     <div class="sidebar">
         <h4 class="text-center py-4 border-bottom">SPK SMARTER</h4>
         <a href="/dashboard">🏠 Dashboard</a>
+        <a href="{{ route('alternatif.index') }}">👨‍🎓 Data Alternatif</a>
+        <a href="{{ route('kriteria.index') }}">📋 Data Kriteria</a>
         <a href="{{ route('perhitungan') }}">📊 Perhitungan</a>
         <a href="{{ route('penilaian.index') }}">📝 Penilaian Siswa</a>
         <a href="#">👤 Data Siswa</a>
