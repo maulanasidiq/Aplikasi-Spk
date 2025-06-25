@@ -43,11 +43,14 @@
         <a href="/dashboard">🏠 Dashboard</a>
         <a href="{{ route('alternatif.index') }}">👨‍🎓 Data Alternatif</a>
         <a href="{{ route('kriteria.index') }}">📋 Data Kriteria</a>
-        <a href="{{ route('perhitungan') }}">📊 Perhitungan</a>
         <a href="{{ route('penilaian.index') }}">📝 Penilaian Siswa</a>
-        <a href="#">👤 Data Siswa</a>
-        <a href="#">⚙️ Pengaturan</a>
-        <a href="{{ route('logout') }}" onclick="return confirm('Yakin ingin logout?')">🚪 Logout</a>
+        <a href="{{ route('perhitungan') }}">📊 Perhitungan</a>
+        <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+            @csrf
+        </form>
+        <a href="#" onclick="event.preventDefault(); if(confirm('Yakin ingin logout?')) document.getElementById('logout-form').submit();">
+            🚪 Logout
+        </a>
     </div>
 
     <div class="content">

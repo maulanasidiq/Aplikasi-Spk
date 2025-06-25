@@ -1,56 +1,88 @@
 @extends('layouts.app')
 
-@section('title', 'Form Penilaian')
+@section('title', 'Input Penilaian')
 
 @section('content')
 <h2>Form Penilaian</h2>
 
-@if (session('success'))
+@if(session('success'))
 <div class="alert alert-success">{{ session('success') }}</div>
 @endif
 
-<form method="POST" action="{{ route('penilaian.store') }}">
+<!-- Form Input Penilaian -->
+<form action="{{ route('penilaian.store') }}" method="POST">
     @csrf
-
     <table class="table table-bordered">
         <thead class="table-dark">
             <tr>
-                <th>No</th>
                 <th>Nama Siswa</th>
-                @foreach ($kriterias as $kriteria)
-                <th>{{ $kriteria->nama }}</th>
-                @endforeach
+                <th>Kriteria</th>
+                <th>Nilai</th>
             </tr>
         </thead>
         <tbody>
-            @forelse ($alternatifs as $index => $alt)
             <tr>
-                <td>{{ $index + 1 }}</td>
-                <td>{{ $alt->nama }}</td>
-                @foreach ($kriterias as $kriteria)
                 <td>
-                    <select name="nilai[{{ $alt->id }}][{{ $kriteria->id }}]" class="form-control" required>
-                        <option value="">-- Pilih --</option>
-                        <option value="90" {{ ($penilaian[$alt->id][$kriteria->id] ?? '') == 90 ? 'selected' : '' }}>81-100</option>
-                        <option value="75" {{ ($penilaian[$alt->id][$kriteria->id] ?? '') == 75 ? 'selected' : '' }}>71-80</option>
-                        <option value="65" {{ ($penilaian[$alt->id][$kriteria->id] ?? '') == 65 ? 'selected' : '' }}>61-70</option>
-                        <option value="55" {{ ($penilaian[$alt->id][$kriteria->id] ?? '') == 55 ? 'selected' : '' }}>51-60</option>
-                        <option value="40" {{ ($penilaian[$alt->id][$kriteria->id] ?? '') == 40 ? 'selected' : '' }}>0-50</option>
+                    <select name="alternatif_id[]" class="form-control" required>
+                        <option value="">-- Pilih Siswa --</option>
+                        @foreach($alternatifs as $alt)
+                        <option value="{{ $alt->id }}">{{ $alt->nama }} ({{ $alt->kelas }})</option>
+                        @endforeach
                     </select>
                 </td>
-                @endforeach
+                <td>
+                    <select name="kriteria_id[]" class="form-control" required>
+                        <option value="">-- Pilih Kriteria --</option>
+                        @foreach($kriterias as $k)
+                        <option value="{{ $k->id }}">{{ $k->nama }} ({{ $k->kode }})</option>
+                        @endforeach
+                    </select>
+                </td>
+                <td>
+                    <input type="number" name="nilai[]" step="0.01" min="0" class="form-control" required>
+                </td>
             </tr>
-            @empty
-            <tr>
-                <td colspan="{{ 2 + count($kriterias) }}" class="text-center">Belum ada data alternatif.</td>
-            </tr>
-            @endforelse
         </tbody>
     </table>
-
-    <div class="d-flex justify-content-between">
-        <a href="{{ route('dashboard') }}" class="btn btn-secondary">← Kembali</a>
-        <button type="submit" class="btn btn-success">Simpan Penilaian</button>
-    </div>
+    <button type="submit" class="btn btn-success">Simpan Penilaian</button>
 </form>
+
+<!-- Data Penilaian Tersimpan -->
+@if(count($penilaian) > 0)
+<hr>
+<h4 class="mt-4">📋 Data Penilaian Tersimpan</h4>
+<table class="table table-bordered mt-2">
+    <thead class="table-dark">
+        <tr>
+            <th>No</th>
+            <th>Nama Siswa</th>
+            <th>Kriteria</th>
+            <th>Nilai</th>
+            <th>Aksi</th>
+        </tr>
+    </thead>
+    <tbody>
+        @php $no = 1; @endphp
+        @foreach($penilaian as $p)
+        <tr>
+            <td>{{ $no++ }}</td>
+            <td>{{ $p->alternatif->nama ?? '-' }}</td>
+            <td>{{ $p->kriteria->nama ?? '-' }} ({{ $p->kriteria->kode ?? '' }})</td>
+            <td>{{ $p->nilai }}</td>
+            <td>
+                <a href="{{ route('penilaian.edit', $p->id) }}" class="btn btn-warning btn-sm">Edit</a>
+                <form action="{{ route('penilaian.destroy', $p->id) }}" method="POST" class="d-inline">
+                    @csrf
+                    @method('DELETE')
+                    <button onclick="return confirm('Yakin ingin menghapus penilaian ini?')" class="btn btn-danger btn-sm">Hapus</button>
+                </form>
+            </td>
+        </tr>
+        @endforeach
+    </tbody>
+</table>
+@else
+<p class="text-muted mt-3">Belum ada data penilaian tersimpan.</p>
+@endif
+
 @endsection

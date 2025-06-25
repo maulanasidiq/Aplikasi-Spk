@@ -11,75 +11,49 @@ class PenilaianController extends Controller
 {
     public function index(Request $request)
     {
-        // Jika tidak ada input, ambil semua data
-        $selectedAlternatifIds = $request->has('alternatif_id')
-            ? $request->input('alternatif_id', [])
-            : Alternatif::pluck('id')->toArray();
+        $alternatifs = Alternatif::all();
+        $kriterias   = Kriteria::all();
 
-        $selectedKriteriaIds = $request->has('kriteria_id')
-            ? $request->input('kriteria_id', [])
-            : Kriteria::pluck('id')->toArray();
-
-        // Ambil data sesuai ID yang dipilih atau semuanya
-        $alternatifs = Alternatif::whereIn('id', $selectedAlternatifIds)->get();
-        $kriterias   = Kriteria::whereIn('id', $selectedKriteriaIds)->get();
-
-        // Ambil semua penilaian
-        $penilaian = [];
-        foreach (Penilaian::all() as $p) {
-            $penilaian[$p->alternatif_id][$p->kriteria_id] = $p->nilai;
-        }
+        // Ambil semua penilaian lengkap dengan relasi
+        $penilaian = Penilaian::with(['alternatif', 'kriteria'])->get();
 
         return view('penilaian.index', [
-            'allAlternatifs' => Alternatif::all(),
-            'allKriterias'   => Kriteria::all(),
-            'alternatifs'    => $alternatifs,
-            'kriterias'      => $kriterias,
-            'penilaian'      => $penilaian,
-            'selectedAlternatifIds' => $selectedAlternatifIds,
-            'selectedKriteriaIds'   => $selectedKriteriaIds
+            'alternatifs' => $alternatifs,
+            'kriterias'   => $kriterias,
+            'penilaian'   => $penilaian
         ]);
     }
 
     public function create(Request $request)
     {
-        return $this->index($request);
+        return $this->index($request); // agar form tetap tampil seperti index
     }
 
     public function store(Request $request)
     {
-        $dataAll = $request->input('nilai', []);
+        $alt_ids      = $request->input('alternatif_id', []);
+        $kriteria_ids = $request->input('kriteria_id', []);
+        $nilai_arr    = $request->input('nilai', []);
 
-        foreach ($dataAll as $alt_id => $kriteria_nilai) {
-            foreach ($kriteria_nilai as $krit_id => $nilai) {
-                Penilaian::updateOrCreate(
-                    [
-                        'alternatif_id' => $alt_id,
-                        'kriteria_id'   => $krit_id,
-                    ],
-                    ['nilai'         => $nilai]
-                );
-            }
+        // Validasi panjang array sama
+        if (count($alt_ids) !== count($kriteria_ids) || count($alt_ids) !== count($nilai_arr)) {
+            return redirect()->back()->with('error', 'Data tidak valid!');
         }
 
-        // Ambil ID alternatif dan kriteria dari data yang disimpan
-        $selectedAlternatifIds = array_keys($dataAll);
-        $selectedKriteriaIds = [];
-
-        foreach ($dataAll as $krits) {
-            $selectedKriteriaIds = array_merge($selectedKriteriaIds, array_keys($krits));
+        for ($i = 0; $i < count($alt_ids); $i++) {
+            Penilaian::updateOrCreate(
+                [
+                    'alternatif_id' => $alt_ids[$i],
+                    'kriteria_id'   => $kriteria_ids[$i],
+                ],
+                [
+                    'nilai' => $nilai_arr[$i],
+                ]
+            );
         }
 
-        // Hilangkan duplikat
-        $selectedKriteriaIds = array_unique($selectedKriteriaIds);
-
-        // Panggil ulang fungsi index dan kirim data terpilih
-        return $this->index(new Request([
-            'alternatif_id' => $selectedAlternatifIds,
-            'kriteria_id' => $selectedKriteriaIds,
-        ]));
+        return redirect()->route('penilaian.index')->with('success', 'Penilaian berhasil disimpan.');
     }
-
 
     public function destroy($id)
     {
@@ -122,6 +96,7 @@ class PenilaianController extends Controller
 
                 $total += $normalisasi * $k->bobot;
             }
+
             $hasil[] = [
                 'alternatif' => $alt,
                 'nilai_akhir' => round($total, 4),
@@ -129,5 +104,26 @@ class PenilaianController extends Controller
         }
 
         return view('perhitungan.index', compact('hasil'));
+    }
+
+    public function edit($id)
+    {
+        $penilaian = Penilaian::findOrFail($id);
+        $alternatifs = Alternatif::all();
+        $kriterias = Kriteria::all();
+
+        return view('penilaian.edit', compact('penilaian', 'alternatifs', 'kriterias'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $penilaian = Penilaian::findOrFail($id);
+        $penilaian->update([
+            'alternatif_id' => $request->alternatif_id,
+            'kriteria_id'   => $request->kriteria_id,
+            'nilai'         => $request->nilai,
+        ]);
+
+        return redirect()->route('penilaian.index')->with('success', 'Penilaian berhasil diperbarui.');
     }
 }

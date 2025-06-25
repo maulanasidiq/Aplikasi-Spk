@@ -47,9 +47,19 @@ class PerhitunganController extends Controller
             ];
         }
 
-        // Urutkan berdasarkan nilai akhir tertinggi
         usort($hasil, fn($a, $b) => $b['nilai_akhir'] <=> $a['nilai_akhir']);
 
-        return view('perhitungan.index', compact('hasil'));
+        // ⬇️ Penilaian untuk ditampilkan
+        $penilaian = [];
+        foreach (Penilaian::all() as $p) {
+            $penilaian[$p->alternatif_id][$p->kriteria_id] = $p->nilai;
+        }
+
+        return view('perhitungan.index', [
+            'hasil' => $hasil,
+            'penilaian' => $penilaian,
+            'allAlternatifs' => $alternatifs,
+            'allKriterias' => $kriterias
+        ]);
     }
 }
